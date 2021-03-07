@@ -1,6 +1,6 @@
 package matrix_metods;
 
-public class MatrixsDate
+public class MatrixDate
 {
   protected String description = null;
 
@@ -36,6 +36,7 @@ public class MatrixsDate
   }
 
   public void print_sys_console(float[][] acc) {
+    System.out.println("");
     for(int i = 0; i < acc.length; i++) {
       System.out.print("|");
       for(int j = 0; j < acc[0].length; j++) {
@@ -46,6 +47,7 @@ public class MatrixsDate
   }
 
   public void print_sys_console(float[] acc) {
+    System.out.println("");
     System.out.print("|");
     for(int i = 0; i < acc.length; i++) {
       System.out.print(acc[i] + "|");
