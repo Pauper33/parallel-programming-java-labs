@@ -14,30 +14,54 @@ public class Lab1 {
     public float acc_n1;
   }
 
+  private static void write_data() {
+    
+    MatrixDate date = new MatrixDate();
+
+    float[][] MD = new float[100][100];
+    float[][] ME = new float[100][100];
+    float[][] MT = new float[100][100];
+    float[][] MZ = new float[100][100];
+    
+    float[] B = new float[100];
+    float[] C = new float[100];
+    float[] D = new float[100];
+    
+    date.fill_array(MD, 100);
+    date.fill_array(ME, 100);
+    date.fill_array(MT, 100);
+    date.fill_array(MZ, 100);
+
+    date.fill_array(B, 100);
+    date.fill_array(C, 100);
+    date.fill_array(D, 100);
+    
+    date.writer(MD, "Matrix_MD.txt");
+    date.writer(ME, "Matrix_ME.txt");
+    date.writer(MT, "Matrix_MT.txt");
+    date.writer(MZ, "Matrix_MZ.txt");
+    
+    date.writer(B, "Vector_B.txt");
+    date.writer(C, "Vector_C.txt");
+    date.writer(D, "Vector_D.txt");
+  }
+
   public static void main(String[] args) {
     
+    //write_data();
+
     MatrixMetods action = new MatrixMetods();
-    MatrixsDate date = new MatrixsDate();
+    MatrixDate date = new MatrixDate();
     GeneralMemory gm = new GeneralMemory();
    
-    float[][] MD = new float[4][4];
-    float[][] ME = new float[4][4];
-    float[][] MT = new float[4][4];
-    float[][] MZ = new float[4][4];
+    float[][] MD = date.reader(100, 100, "Matrix_MD.txt");
+    float[][] ME = date.reader(100, 100, "Matrix_ME.txt");
+    float[][] MT = date.reader(100, 100, "Matrix_MT.txt");
+    float[][] MZ = date.reader(100, 100, "Matrix_MZ.txt");
     
-    float[] B = new float[4];
-    float[] C = new float[4];
-    float[] D = new float[4];
-  
-    date.fill_array(MD);
-    date.fill_array(ME);
-    date.fill_array(MT);
-    date.fill_array(MZ);
-
-    date.fill_array(B);
-    date.fill_array(C);
-    date.fill_array(D);
-
+    float[] B = date.reader(100, "Vector_B.txt");
+    float[] C = date.reader(100, "Vector_C.txt");
+    float[] D = date.reader(100, "Vector_D.txt");
 
     new Thread (new Runnable(){
       public void run() {
@@ -109,14 +133,14 @@ public class Lab1 {
             } catch (InterruptedException e) {
               e.printStackTrace();
             }
-            gm.A = action.subtraction(gm.acc_v1, gm.acc_v2);
+            gm.A = action.addition(gm.acc_v1, gm.acc_v2);
             try {
               tr3.join();
               Thread.sleep(10);
             } catch (InterruptedException e) {
               e.printStackTrace();
             }
-            date.print_sys_console(gm.A);
+            date.print_sys_console(gm.acc_v2);
             System.out.println("stop: " + Thread.currentThread().getName());
           }
         });
