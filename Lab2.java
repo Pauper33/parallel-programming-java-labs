@@ -52,9 +52,8 @@ public class Lab2 {
     MatrixMetods action = new MatrixMetods();
     MatrixDate date = new MatrixDate();
     GeneralMemory gm = new GeneralMemory();
-    CyclicBarrier bar_1 = new CyclicBarrier(2);
+    CyclicBarrier bar_1 = new CyclicBarrier(4);
     CyclicBarrier bar_2 = new CyclicBarrier(2);
-    CyclicBarrier bar_3 = new CyclicBarrier(2);
    
     float[][] MD = date.reader(100, 100, "Matrix_MD.txt");
     float[][] ME = date.reader(100, 100, "Matrix_ME.txt");
@@ -93,16 +92,21 @@ public class Lab2 {
         }
         gm.MG = action.subtraction(gm.acc_m1, gm.acc_m2);
         try {
-          bar_3.await();
+          bar_2.await();
         } catch (Exception e) {
           e.printStackTrace();
         }
         try {
-          bar_3.await();
+          bar_2.await();
         } catch (Exception e) {
           e.printStackTrace();
         }
         date.print_sys_console(gm.MG);
+        try {
+          bar_2.await();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
 
         System.out.println("stop: " + Thread.currentThread().getName());
       }     
@@ -114,7 +118,7 @@ public class Lab2 {
 
         gm.acc_v1 = action.multiply(MT, D);
         try {
-          bar_2.await();
+          bar_1.await();
         } catch (Exception e) {
           e.printStackTrace();
         }
@@ -129,19 +133,24 @@ public class Lab2 {
     
         gm.acc_v2 = action.multiply(B, action.max(C));
         try {
-          bar_2.await();
+          bar_1.await();
         } catch (Exception e) {
           e.printStackTrace();
         }
         gm.A = action.subtraction(gm.acc_v1, gm.acc_v2);
         try {
-          bar_3.await();
+          bar_2.await();
         } catch (Exception e) {
           e.printStackTrace();
         }
         date.print_sys_console(gm.A);
         try {
-        bar_3.await();
+        bar_2.await();
+        } catch (Exception e) {
+          e.printStackTrace();
+        }
+        try {
+          bar_2.await();
         } catch (Exception e) {
           e.printStackTrace();
         }
