@@ -10,7 +10,8 @@ import java.util.Scanner;
 public class MatrixDate
 {
 
-  public float[][] fill_array(float[][] acc, float max) {
+  public float[][] fill_array(int n, float max) {
+    float[][] acc = new float[n][n];
     for(int i = 0; i < acc.length; i++) {
       for(int j = 0; j < acc[0].length; j++) {
         acc[i][j] = max <= 0 ? randomize_one() : randomize(max); 
@@ -19,7 +20,8 @@ public class MatrixDate
     return acc;
   }
 
-  public float[] fill_array(float[] acc, float max) {
+  public float[] fill_vector(int n, float max) {
+    float[] acc = new float[n];
     for(int i = 0; i < acc.length; i++) {
       acc[i] = max == 0 ? randomize_one() : randomize(max);
     }

@@ -143,7 +143,7 @@ public class MatrixMetods {
     return acc;
   }
 
-  private float kahan_sum(float... arr) {
+  public float kahan_sum(float... arr) {
     float sum = 0.0F, c = 0.0F, t, y;
     for(float acc:arr) {
       y = acc - c;

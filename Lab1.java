@@ -1,160 +1,148 @@
 import matrix_metods.*;
+import java.util.concurrent.CyclicBarrier;
+import java.time.LocalTime;
 
 public class Lab1 {
+  
+  MatrixDate matrix_date = new MatrixDate();
+  MatrixMetods matrix = new MatrixMetods();
 
-  static private class GeneralMemory {
-    public float[][] MG;
-    public float[][] acc_m1;
-    public float[][] acc_m2;
+  float[][] MD;
+  float[][] ME;
+  float[][] MT;
+  float[][] MZ;
+  float[][] MG;
 
-    public float[] A;
-    public float[] acc_v1;
-    public float[] acc_v2;
+  float[] B;
+  float[] C;
+  float[] D;
+  float[] A;
+
+  int n;
+  int p;
+
+  Lab1(float[][] MD, float[][] ME, float[][] MT, float[][] MZ, float[] B, float[] C, float[] D, int n, int p) {
+    this.MD = MD;
+    this.ME = ME;
+    this.MT = MT;
+    this.MZ = MZ;
+    this.B = B;
+    this.C = C;
+    this.D = D;
+    this.n = n;
+    this.p = p;
+    MG = new float[n][n];
+    A = new float[n];
     
-    public float acc_n1;
   }
 
-  private static void write_data() {
-    
-    MatrixDate date = new MatrixDate();
+  public static class GeneralMemory {
+    public float[][] MD;
+    public float[][] ME;
+    public float[][] MG;
+    public float[][] MT;
+    public float[][] MZ;    
 
-    float[][] MD = new float[100][100];
-    float[][] ME = new float[100][100];
-    float[][] MT = new float[100][100];
-    float[][] MZ = new float[100][100];
-    
-    float[] B = new float[100];
-    float[] C = new float[100];
-    float[] D = new float[100];
-    
-    date.fill_array(MD, 100);
-    date.fill_array(ME, 100);
-    date.fill_array(MT, 100);
-    date.fill_array(MZ, 100);
+    public float[] A;
+    public float[] B;
+    public float[] C;
+    public float[] D;
+  }
 
-    date.fill_array(B, 100);
-    date.fill_array(C, 100);
-    date.fill_array(D, 100);
+  private static void write_data(int n, int max) {
     
-    date.writer(MD, "Matrix_MD.txt");
-    date.writer(ME, "Matrix_ME.txt");
-    date.writer(MT, "Matrix_MT.txt");
-    date.writer(MZ, "Matrix_MZ.txt");
+    MatrixDate matrix_date = new MatrixDate();
+    GeneralMemory gm = new GeneralMemory();
+
+    gm.MD = matrix_date.fill_array(n, max);
+    gm.ME = matrix_date.fill_array(n, max);
+    gm.MT = matrix_date.fill_array(n, max);
+    gm.MZ = matrix_date.fill_array(n, max);
+
+    gm.B = matrix_date.fill_vector(n, max);
+    gm.C = matrix_date.fill_vector(n, max);
+    gm.D = matrix_date.fill_vector(n, max);
     
-    date.writer(B, "Vector_B.txt");
-    date.writer(C, "Vector_C.txt");
-    date.writer(D, "Vector_D.txt");
+    matrix_date.writer(gm.MD, "Matrix_MD.txt");
+    matrix_date.writer(gm.ME, "Matrix_ME.txt");
+    matrix_date.writer(gm.MT, "Matrix_MT.txt");
+    matrix_date.writer(gm.MZ, "Matrix_MZ.txt");
+    
+    matrix_date.writer(gm.B, "Vector_B.txt");
+    matrix_date.writer(gm.C, "Vector_C.txt");
+    matrix_date.writer(gm.D, "Vector_D.txt");
+  }
+  
+  public float[][] runMG() {
+    MGThread[] acc = new MGThread[p];
+    for (int i = 0; i < p; i++) {
+      acc[i] = new MGThread(i);
+    }
+
+    try {
+      for (int i = 0; i < p; i++) {
+        acc[i].thr.join();
+      }
+    } catch (InterruptedException e) {
+      System.out.println("Interupted!");
+    }
+    return MG;
+  } 
+  
+  public class MGThread implements Runnable {
+    Thread thr;
+    int i;
+    
+    MGThread(int i) {
+      this.i = i;
+      thr = new Thread(this);
+      thr.start();
+    }
+
+    public void run() {
+      System.out.println("start: " + Thread.currentThread().getName());
+      for (int i = this.i * n / p; i < (this.i + 1) * n / p; i++) {
+        for (int j = 0; j < n; j++) {
+          for (int k = 0; k < n; k++) {
+            MG[i][j] += matrix.kahan_sum(
+              MD[i][k] * matrix.kahan_sum(MT[k][j], MZ[k][j])
+              ,0 - ME[i][k] * MD[k][j]);
+          }
+        }
+      }
+      System.out.println("finish: " + Thread.currentThread().getName());
+    }
   }
 
   public static void main(String[] args) {
-    
-    //write_data();
+    MatrixDate matrix_date = new MatrixDate();
+    MatrixMetods matrix = new MatrixMetods();
 
-    MatrixMetods action = new MatrixMetods();
-    MatrixDate date = new MatrixDate();
-    GeneralMemory gm = new GeneralMemory();
+    int n = 100;
+    int p = 4;
    
-    float[][] MD = date.reader(100, 100, "Matrix_MD.txt");
-    float[][] ME = date.reader(100, 100, "Matrix_ME.txt");
-    float[][] MT = date.reader(100, 100, "Matrix_MT.txt");
-    float[][] MZ = date.reader(100, 100, "Matrix_MZ.txt");
+    //write_data(n, 100);
     
-    float[] B = date.reader(100, "Vector_B.txt");
-    float[] C = date.reader(100, "Vector_C.txt");
-    float[] D = date.reader(100, "Vector_D.txt");
 
-    new Thread (new Runnable(){
-      public void run() {
-        System.out.println("General Thread starts: " + Thread.currentThread().getName());
+    float[][] MD = matrix_date.reader(n, n, "Matrix_MD.txt");
+    float[][] ME = matrix_date.reader(n, n, "Matrix_ME.txt");
+    float[][] MT = matrix_date.reader(n, n, "Matrix_MT.txt");
+    float[][] MZ = matrix_date.reader(n, n, "Matrix_MZ.txt");
+    float[][] MG;
 
-        Thread tr0 = new Thread (new Runnable(){
-          public void run() {
-            System.out.println("start: " + Thread.currentThread().getName());
-            
-            gm.acc_m1 = action.addition(MT, MZ);
-            gm.acc_n1 = action.max(C);
-            System.out.println("stop: " + Thread.currentThread().getName());
-          }     
-        });
+    float[] B = matrix_date.reader(n, "Vector_B.txt");
+    float[] C = matrix_date.reader(n, "Vector_C.txt");
+    float[] D = matrix_date.reader(n, "Vector_D.txt");
+    float[] A;
+
+    Lab1 work = new Lab1(MD, ME, MT, MZ, B, C, D, n, p);
+
+    System.out.println(LocalTime.now());
+
+    MG = work.runMG();
     
-        Thread tr1 = new Thread (new Runnable(){
-          public void run() {
-            System.out.println("start: " + Thread.currentThread().getName());
-            
-            gm.acc_m2 = action.multiply(ME, MD);
-            
-            try {
-              tr0.join();
-            } catch (InterruptedException e) {
-              e.printStackTrace();
-            }
+    matrix_date.writer(MG, "Matrix_MG.txt");    
 
-            gm.acc_m1 = action.multiply(gm.acc_m1, MD);
-            System.out.println("stop: " + Thread.currentThread().getName());
-          }      
-        });
-
-        Thread tr2 = new Thread (new Runnable(){
-          public void run() {
-            System.out.println("start: " + Thread.currentThread().getName());
-            
-            gm.acc_v1 = action.multiply(MT, D);
-            
-            try {
-              tr0.join();
-            } catch (InterruptedException e) {
-              e.printStackTrace();
-            }
-
-            gm.acc_v2 = action.multiply(B, gm.acc_n1);
-            System.out.println("stop: " + Thread.currentThread().getName());
-          }
-        });
-
-        Thread tr3 = new Thread (new Runnable(){
-          public void run() {
-            System.out.println("start: " + Thread.currentThread().getName());
-            try {
-              tr1.join();
-            } catch (InterruptedException e) {
-              e.printStackTrace();
-            }
-            gm.MG = action.subtraction(gm.acc_m1, gm.acc_m2);
-            date.print_sys_console(gm.MG);
-            System.out.println("stop: " + Thread.currentThread().getName());
-          }
-        });
-
-        Thread tr4 = new Thread (new Runnable(){
-          public void run() {
-            System.out.println("start: " + Thread.currentThread().getName());
-            try {
-              tr2.join();
-            } catch (InterruptedException e) {
-              e.printStackTrace();
-            }
-            gm.A = action.addition(gm.acc_v1, gm.acc_v2);
-            try {
-              tr3.join();
-              Thread.sleep(10);
-            } catch (InterruptedException e) {
-              e.printStackTrace();
-            }
-            date.print_sys_console(gm.acc_v2);
-            System.out.println("stop: " + Thread.currentThread().getName());
-          }
-        });
-
-
-
-        tr0.start();
-        tr1.start();
-        tr2.start();
-        tr3.start();
-        tr4.start();
-      }
-    }).start();
+    System.out.println(LocalTime.now());
   }
 } 
-
-
