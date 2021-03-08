@@ -9,26 +9,14 @@ import java.util.Scanner;
 
 public class MatrixDate
 {
-  protected String description = null;
-
-  public MatrixDate() {
-    this.description = "matrix_date";
-  }
-  public String getInformation() {
-    return description;
-  }
 
   public float[][] fill_array(float[][] acc, float max) {
     for(int i = 0; i < acc.length; i++) {
       for(int j = 0; j < acc[0].length; j++) {
-        acc[i][j] = max == 0 ? randomize_one() : randomize(max); 
+        acc[i][j] = max <= 0 ? randomize_one() : randomize(max); 
       }
     }
     return acc;
-  }
-
-  public void fill_array(float[][] acc) {
-    fill_array(acc, 0.0F);
   }
 
   public float[] fill_array(float[] acc, float max) {
@@ -36,10 +24,6 @@ public class MatrixDate
       acc[i] = max == 0 ? randomize_one() : randomize(max);
     }
     return acc;
-  }
-
-  public void fill_array(float[] acc) {
-    fill_array(acc, 0.0F);
   }
 
   public void print_sys_console(float[][] acc) {

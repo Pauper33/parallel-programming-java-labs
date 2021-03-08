@@ -39,10 +39,6 @@ public class MatrixMetods {
     return value;
   }
 
-  public void multiply(float[] vector, float[][] matrix) {
-    multiply(matrix, vector);
-  }
-
   public float[][] multiply(float[][] matrix, float n) {
     float[][] value = new float[matrix.length][matrix[0].length];
     for (int i = 0; i < matrix.length; i++) {
@@ -53,20 +49,12 @@ public class MatrixMetods {
     return value;
   }
 
-  public void multiply(float n, float[][] matrix) {
-    multiply(matrix, n);
-  }
-
   public float[] multiply(float[] vector, float n) {
     float[] value = new float[vector.length];
     for(int i = 0; i < vector.length; i++) {
       value[i] = vector[i] * n;
     }
     return value;
-  }
-
-  public void multiply(float n, float[] vector) {
-    multiply(vector, n);
   }
 
   public float[][] addition(float[][] matrix1, float[][] matrix2) {
