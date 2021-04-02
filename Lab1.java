@@ -6,6 +6,8 @@ public class Lab1 {
   
   MatrixDate matrix_date = new MatrixDate();
   MatrixMetods matrix = new MatrixMetods();
+  MGThread[] accMG;
+  AThread[] accA;
 
   float[][] MD;
   float[][] ME;
@@ -17,9 +19,13 @@ public class Lab1 {
   float[] C;
   float[] D;
   float[] A;
+  float[] A1;
+  float C_max;
+
 
   int n;
   int p;
+  int counter;
 
   Lab1(float[][] MD, float[][] ME, float[][] MT, float[][] MZ, float[] B, float[] C, float[] D, int n, int p) {
     this.MD = MD;
@@ -31,9 +37,13 @@ public class Lab1 {
     this.D = D;
     this.n = n;
     this.p = p;
+    this.counter = 0;
+    this.accA = new AThread[p];
+    this.accMG = new MGThread[p];
     MG = new float[n][n];
     A = new float[n];
-    
+    A1 = new float[n];
+    float C_max;
   }
 
   public static class GeneralMemory {
@@ -74,19 +84,31 @@ public class Lab1 {
   }
   
   public float[][] runMG() {
-    MGThread[] acc = new MGThread[p];
     for (int i = 0; i < p; i++) {
-      acc[i] = new MGThread(i);
+      accMG[i] = new MGThread(i);
     }
-
     try {
       for (int i = 0; i < p; i++) {
-        acc[i].thr.join();
+        accMG[i].thr.join();
       }
     } catch (InterruptedException e) {
       System.out.println("Interupted!");
     }
     return MG;
+  }
+
+  public float[] runA() {
+    for (int i = 0; i < p; i++) {
+      accA[i] = new AThread(i);
+    }
+    try {
+      for (int i = 0; i < p; i++) {
+        accA[i].thr.join();
+      }
+    } catch (InterruptedException e) {
+      System.out.println("Interupted!");
+    }
+    return A;
   } 
   
   public class MGThread implements Runnable {
@@ -110,6 +132,79 @@ public class Lab1 {
           }
         }
       }
+      System.out.println("finish: " + Thread.currentThread().getName());
+    }
+  }
+
+  public class AThread implements Runnable {
+    Thread thr;
+    int i;
+    boolean flag;
+    
+    AThread(int i) {
+      this.i = i;
+      thr = new Thread(this);
+      thr.start();
+    }
+
+    synchronized void add_count() {
+      counter++;
+    }
+
+    synchronized void sub_count() {
+      counter--;
+    }
+
+    synchronized void suspend() {
+      flag = true;
+    }
+
+    synchronized void resume() {
+      flag = false;
+      notify();
+    }
+
+    public void run() {
+      System.out.println("start: " + Thread.currentThread().getName());
+      
+      for (int i = this.i * n / p; i < (this.i + 1) * n / p; i++) {
+        for (int j = 0; j < n; j++) {
+          A1[i] += MT[i][j] * D[j];
+        }
+      }
+
+      synchronized(this) {
+        suspend();
+        add_count();
+      }
+      if (counter != p) {  
+        synchronized (this) {
+          while (flag) {
+            try {
+              wait();
+            } catch (InterruptedException e) {
+              e.printStackTrace();
+            }
+          }
+        }
+      } else {
+        C_max = matrix.max(C); 
+        synchronized (this) { 
+          while (counter > 1) {
+            for (int i = 0; i < p; i++) {
+              accA[i].resume();
+            }
+          }
+        }
+      }
+      synchronized(this) {
+        sub_count();
+      }
+
+      for (int i = this.i * n / p; i < (this.i + 1) * n / p; i++) {
+        A[i] = matrix.kahan_sum(A1[i], - C_max * B[i]);
+      }
+
       System.out.println("finish: " + Thread.currentThread().getName());
     }
   }
@@ -139,9 +234,13 @@ public class Lab1 {
 
     System.out.println(LocalTime.now());
 
-    MG = work.runMG();
+    //MG = work.runMG();
+
+    A = work.runA();
     
-    matrix_date.writer(MG, "Matrix_MG.txt");    
+    //matrix_date.writer(MG, "Matrix_MG.txt");    
+
+    matrix_date.writer(A, "Matrix_A.txt");    
 
     System.out.println(LocalTime.now());
   }
