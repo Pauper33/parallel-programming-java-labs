@@ -234,11 +234,13 @@ public class Lab1 {
 
     System.out.println(LocalTime.now());
 
-    //MG = work.runMG();
-
-    A = work.runA();
+    MG = work.runMG();
+    //matrix_date.print_sys_console(MG);
     
-    //matrix_date.writer(MG, "Matrix_MG.txt");    
+    A = work.runA();
+    //matrix_date.print_sys_console(A);
+    
+    matrix_date.writer(MG, "Matrix_MG.txt");    
 
     matrix_date.writer(A, "Matrix_A.txt");    
 

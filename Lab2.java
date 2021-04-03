@@ -1,164 +1,212 @@
 import matrix_metods.*;
-import java.util.concurrent.CyclicBarrier;
+import java.util.concurrent.*;
+import java.time.LocalTime;
 
 public class Lab2 {
+  
+  MatrixDate matrix_date = new MatrixDate();
+  MatrixMetods matrix = new MatrixMetods();
+  CountDownLatch count;
+  CountDownLatch countMG;
+  CountDownLatch countA;
+  MGThread[] accMG;
+  AThread[] accA;
 
-  static private class GeneralMemory {
-    public float[][] MG;
-    public float[][] acc_m1;
-    public float[][] acc_m2;
+  float[][] MD;
+  float[][] ME;
+  float[][] MT;
+  float[][] MZ;
+  float[][] MG;
 
-    public float[] A;
-    public float[] acc_v1;
-    public float[] acc_v2;
+  float[] B;
+  float[] C;
+  float[] D;
+  float[] A;
+  float[] A1;
+  float C_max;
+
+
+  int n;
+  int p;
+  int counter;
+
+  Lab2(float[][] MD, float[][] ME, float[][] MT, float[][] MZ, float[] B, float[] C, float[] D, int n, int p) {
+    this.MD = MD;
+    this.ME = ME;
+    this.MT = MT;
+    this.MZ = MZ;
+    this.B = B;
+    this.C = C;
+    this.D = D;
+    this.n = n;
+    this.p = p;
+    this.count = new CountDownLatch(2);
+    this.countMG = new CountDownLatch(p);
+    this.countA = new CountDownLatch(p);
+    this.accA = new AThread[p];
+    this.accMG = new MGThread[p];
+    MG = new float[n][n];
+    A = new float[n];
+    A1 = new float[n];
+    float C_max;
   }
 
-  private static void write_data() {
-    
-    MatrixDate date = new MatrixDate();
+  public static class GeneralMemory {
+    public float[][] MD;
+    public float[][] ME;
+    public float[][] MG;
+    public float[][] MT;
+    public float[][] MZ;    
 
-    float[][] MD = new float[100][100];
-    float[][] ME = new float[100][100];
-    float[][] MT = new float[100][100];
-    float[][] MZ = new float[100][100];
-    
-    float[] B = new float[100];
-    float[] C = new float[100];
-    float[] D = new float[100];
-    
-    date.fill_array(MD, 100);
-    date.fill_array(ME, 100);
-    date.fill_array(MT, 100);
-    date.fill_array(MZ, 100);
+    public float[] A;
+    public float[] B;
+    public float[] C;
+    public float[] D;
+  }
 
-    date.fill_array(B, 100);
-    date.fill_array(C, 100);
-    date.fill_array(D, 100);
+  private static void write_data(int n, int max) {
     
-    date.writer(MD, "Matrix_MD.txt");
-    date.writer(ME, "Matrix_ME.txt");
-    date.writer(MT, "Matrix_MT.txt");
-    date.writer(MZ, "Matrix_MZ.txt");
+    MatrixDate matrix_date = new MatrixDate();
+    GeneralMemory gm = new GeneralMemory();
+
+    gm.MD = matrix_date.fill_array(n, max);
+    gm.ME = matrix_date.fill_array(n, max);
+    gm.MT = matrix_date.fill_array(n, max);
+    gm.MZ = matrix_date.fill_array(n, max);
+
+    gm.B = matrix_date.fill_vector(n, max);
+    gm.C = matrix_date.fill_vector(n, max);
+    gm.D = matrix_date.fill_vector(n, max);
     
-    date.writer(B, "Vector_B.txt");
-    date.writer(C, "Vector_C.txt");
-    date.writer(D, "Vector_D.txt");
+    matrix_date.writer(gm.MD, "Matrix_MD.txt");
+    matrix_date.writer(gm.ME, "Matrix_ME.txt");
+    matrix_date.writer(gm.MT, "Matrix_MT.txt");
+    matrix_date.writer(gm.MZ, "Matrix_MZ.txt");
+    
+    matrix_date.writer(gm.B, "Vector_B.txt");
+    matrix_date.writer(gm.C, "Vector_C.txt");
+    matrix_date.writer(gm.D, "Vector_D.txt");
+  }
+  
+  public float[][] runMG() {
+    for (int i = 0; i < p; i++) {
+      accMG[i] = new MGThread(i);
+    }
+    return MG;
+  }
+
+  public float[] runA() {
+    for (int i = 0; i < p; i++) {
+      accA[i] = new AThread(i);
+    }
+    return A;
+  } 
+  
+  public class MGThread implements Runnable {
+    Thread thr;
+    int i;
+    
+    MGThread(int i) {
+      this.i = i;
+      thr = new Thread(this);
+      thr.start();
+    }
+
+    public void run() {
+      System.out.println("start: " + Thread.currentThread().getName());
+      for (int i = this.i * n / p; i < (this.i + 1) * n / p; i++) {
+        for (int j = 0; j < n; j++) {
+          for (int k = 0; k < n; k++) {
+            MG[i][j] += matrix.kahan_sum(
+              MD[i][k] * matrix.kahan_sum(MT[k][j], MZ[k][j])
+              ,0 - ME[i][k] * MD[k][j]);
+          }
+        }
+      }
+      countMG.countDown();
+      try {
+        countMG.await();
+      } catch (InterruptedException ex) {}
+      System.out.println("finish: " + Thread.currentThread().getName());
+    }
+  }
+
+  public class AThread implements Runnable {
+    Thread thr;
+    int i;
+    boolean flag;
+    
+    AThread(int i) {
+      this.i = i;
+      thr = new Thread(this);
+      thr.start();
+    }
+
+    public void run() {
+      System.out.println("start: " + Thread.currentThread().getName());
+      
+      for (int i = this.i * n / p; i < (this.i + 1) * n / p; i++) {
+        for (int j = 0; j < n; j++) {
+          A1[i] += MT[i][j] * D[j];
+        }
+      }
+
+      while(count.getCount() == 1) {
+        try {
+          count.await();
+        } catch (InterruptedException ex) {} // return;
+      }
+      count.countDown();
+      if (count.getCount() == 1) {
+        C_max = matrix.max(C); 
+      }
+      count.countDown();
+      for (int i = this.i * n / p; i < (this.i + 1) * n / p; i++) {
+        A[i] = matrix.kahan_sum(A1[i], - C_max * B[i]);
+      }
+      countA.countDown();
+      try {
+        countA.await();
+      } catch (InterruptedException ex) {}
+      System.out.println("finish: " + Thread.currentThread().getName());
+    }
   }
 
   public static void main(String[] args) {
-    
-    //write_data();
+    MatrixDate matrix_date = new MatrixDate();
+    MatrixMetods matrix = new MatrixMetods();
 
-    MatrixMetods action = new MatrixMetods();
-    MatrixDate date = new MatrixDate();
-    GeneralMemory gm = new GeneralMemory();
-    CyclicBarrier bar_1 = new CyclicBarrier(4);
-    CyclicBarrier bar_2 = new CyclicBarrier(2);
+    int n = 100;
+    int p = 4;
    
-    float[][] MD = date.reader(100, 100, "Matrix_MD.txt");
-    float[][] ME = date.reader(100, 100, "Matrix_ME.txt");
-    float[][] MT = date.reader(100, 100, "Matrix_MT.txt");
-    float[][] MZ = date.reader(100, 100, "Matrix_MZ.txt");
+    //write_data(n, 100);
     
-    float[] B = date.reader(100, "Vector_B.txt");
-    float[] C = date.reader(100, "Vector_C.txt");
-    float[] D = date.reader(100, "Vector_D.txt");
 
+    float[][] MD = matrix_date.reader(n, n, "Matrix_MD.txt");
+    float[][] ME = matrix_date.reader(n, n, "Matrix_ME.txt");
+    float[][] MT = matrix_date.reader(n, n, "Matrix_MT.txt");
+    float[][] MZ = matrix_date.reader(n, n, "Matrix_MZ.txt");
+    float[][] MG;
+
+    float[] B = matrix_date.reader(n, "Vector_B.txt");
+    float[] C = matrix_date.reader(n, "Vector_C.txt");
+    float[] D = matrix_date.reader(n, "Vector_D.txt");
+    float[] A;
+
+    Lab2 work = new Lab2(MD, ME, MT, MZ, B, C, D, n, p);
+
+    System.out.println(LocalTime.now());
+
+    MG = work.runMG();
+    //matrix_date.print_sys_console(MG);
+
+    A = work.runA();
+    //matrix_date.print_sys_console(A);
     
-    new Thread (new Runnable(){
-      public void run() {
-        System.out.println("start: " + Thread.currentThread().getName());
-        
-        gm.acc_m1 = action.multiply(action.addition(MT, MZ), MD);
-        try {
-          bar_1.await();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
+    matrix_date.writer(MG, "Matrix_MG.txt");    
 
-        System.out.println("stop: " + Thread.currentThread().getName());
-      }     
-    }).start();
-    
-    new Thread (new Runnable(){
-      public void run() {
-        System.out.println("start: " + Thread.currentThread().getName());
-        
-        gm.acc_m2 = action.multiply(ME, MD);
-        try {
-          bar_1.await();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-        gm.MG = action.subtraction(gm.acc_m1, gm.acc_m2);
-        try {
-          bar_2.await();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-        try {
-          bar_2.await();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-        date.print_sys_console(gm.MG);
-        try {
-          bar_2.await();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
+    matrix_date.writer(A, "Matrix_A.txt");    
 
-        System.out.println("stop: " + Thread.currentThread().getName());
-      }     
-    }).start();
-
-    new Thread (new Runnable(){
-      public void run() {
-        System.out.println("start: " + Thread.currentThread().getName());
-
-        gm.acc_v1 = action.multiply(MT, D);
-        try {
-          bar_1.await();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-
-        System.out.println("stop: " + Thread.currentThread().getName());
-      }     
-    }).start();
-
-    new Thread (new Runnable(){
-      public void run() {
-        System.out.println("start: " + Thread.currentThread().getName());
-    
-        gm.acc_v2 = action.multiply(B, action.max(C));
-        try {
-          bar_1.await();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-        gm.A = action.subtraction(gm.acc_v1, gm.acc_v2);
-        try {
-          bar_2.await();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-        date.print_sys_console(gm.A);
-        try {
-        bar_2.await();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-        try {
-          bar_2.await();
-        } catch (Exception e) {
-          e.printStackTrace();
-        }
-
-        System.out.println("stop: " + Thread.currentThread().getName());
-      }     
-    }).start();
+    System.out.println(LocalTime.now());
   }
 } 
-
-
